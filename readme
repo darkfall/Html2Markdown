@@ -19,7 +19,7 @@ A simple library that converts 'markdownified' html document back to markdown sy
 
 * Limitations:
 	Only html tags that specified in the markdown documentation will be converted
-	Tables not supported
+	Tables are not supported now
 	Html escape characters will not be converted
 
 * Known Issues:
