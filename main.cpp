@@ -13,7 +13,7 @@
 //#include "src/markdown.h"
 //#include "html/html.h"
 
-static const char* html = "<html><body><h1>hello world</h1><h3>Hello world2</h3><p>hahahhaha test<a href=\"www.google.com\" title=\"Google\">Google!</a>test<ul><li>ll1</li><li>ll2</li></ul></p><ul><li><p>list1</p></li><li>list2</li></ul></body></html>";
+static const char* html = "<html><body><h1>hello&nbsp;world</h1><h3>Hello world2</h3><p>hahahhaha test<a href=\"www.google.com\" title=\"Google\">Google!</a>test<ul><li>ll1</li><li>ll2</li></ul></p><ul><li><p>list1</p></li><li>list2</li></ul></body></html>";
 
 int main (int argc, const char * argv[])
 {
