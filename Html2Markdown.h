@@ -58,9 +58,22 @@ struct Html {
 };
 
 class Html2Markdown {
-public:
-    static std::string Convert(const char* html, size_t length);
-    
+public:    
+    struct Configuration {
+        enum HeaderStyle { setext, atx };
+        
+        char listmark;
+        char emmark;
+        char strongmark;
+        int  headerstyle;
+        
+        Configuration(char lm, char em, char sm, int hs):
+        listmark(lm),
+        emmark(em),
+        strongmark(sm),
+        headerstyle(hs) { }
+    };
+        
     class Exception {
     public:
         Exception(const char* mssg);
@@ -70,14 +83,19 @@ public:
     private:
         const char* mMssg;
     };
+
+    static Configuration DefaultConfiguration;
+
+public:
+    static std::string Convert(const char* text, size_t length, const Html2Markdown::Configuration& config = Html2Markdown::DefaultConfiguration);
     
 private:
     struct HtmlNode;
     typedef std::vector<HtmlNode*> HtmlNodeTree;
     
     static void ParseHtmlTree(HtmlNodeTree& tree);
-    static std::string ConvertHtmlTree(HtmlNode* node);
-    static std::string ConvertBlockQuote(HtmlNode* node);
+    static std::string ConvertHtmlTree(HtmlNode* node, const Html2Markdown::Configuration& config);
+    static std::string ConvertBlockQuote(HtmlNode* node, const Html2Markdown::Configuration& config);
 };
 
 #endif

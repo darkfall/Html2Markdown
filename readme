@@ -1,26 +1,25 @@
 A simple library that converts 'markdownified' html document back to markdown syntax
 
 * Usage: 
-	std::string markdown = Html2Markdown::Convert(DOC, LENGTH)
+	std::string markdown = Html2Markdown::Convert(DOC, LENGTH[, Configuration])
 
 * Notice:
 	The result may not exactly the same as the original document as the converter only emits part of the markdown syntax. 
-	UL -> +
+	UL -> Configuration.listmark
 	OL -> [1-N].
-	em -> *
-	strong -> **
+	em -> Configuration.emmark
+	strong -> Configuration.strongmark * 2
 	code -> ' or ''
 	pre+code -> \t
 	blockquote -> > 
 	a -> [text](link, "title")
 	img -> ![alt](image, "title")
 	p -> text + \n\n
-		
+	tb/tr/tl -> keep the same
 
 * Limitations:
 	Only html tags that specified in the markdown documentation will be converted
-	Tables are not supported now
-	Html escape characters will not be converted
+	Only part of html escape characters will not be converted
 
 * Known Issues:
 

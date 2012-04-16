@@ -13,7 +13,7 @@
 //#include "src/markdown.h"
 //#include "html/html.h"
 
-static const char* html = "<html><body><p>hello world</p><p>Hello world2</p><p>hahahhaha test<a href=\"www.google.com\" title=\"Google\">Google!</a>test<ul><li>ll1</li><li>ll2</li></ul></p><ul><li><p>list1</p></li><li>list2</li></ul></body></html>";
+static const char* html = "<html><body><h1>hello world</h1><h3>Hello world2</h3><p>hahahhaha test<a href=\"www.google.com\" title=\"Google\">Google!</a>test<ul><li>ll1</li><li>ll2</li></ul></p><ul><li><p>list1</p></li><li>list2</li></ul></body></html>";
 
 int main (int argc, const char * argv[])
 {
@@ -35,7 +35,7 @@ int main (int argc, const char * argv[])
     buf* ob = bufnew(16);
     sd_markdown_render(ob, (uint8_t*)doc, size, md);*/
     
-    std::string result = Html2Markdown::Convert(html, strlen(html));
+    std::string result = Html2Markdown::Convert(html, strlen(html), Html2Markdown::Configuration('*', '_', '_', Html2Markdown::Configuration::setext));
         
     // insert code here...
     printf("%s\n", result.c_str());
