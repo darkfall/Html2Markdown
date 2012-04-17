@@ -17,7 +17,7 @@ static const char* html = "<html><body><h1>hello&nbsp;world</h1><h3>Hello world2
 
 int main (int argc, const char * argv[])
 {
-   /* FILE* file = fopen("markdown.txt", "rb");
+  /*  FILE* file = fopen("markdown.txt", "rb");
     fseek(file, 0, SEEK_END);
     size_t size = ftell(file);
     fseek(file, 0, SEEK_SET);
@@ -33,9 +33,11 @@ int main (int argc, const char * argv[])
     
     sd_markdown* md = sd_markdown_new(0, 16, &cb, &opt);
     buf* ob = bufnew(16);
-    sd_markdown_render(ob, (uint8_t*)doc, size, md);*/
+    sd_markdown_render(ob, (uint8_t*)doc, size, md);
     
-    std::string result = Html2Markdown::Convert(html, strlen(html), Html2Markdown::Configuration('*', '_', '_', Html2Markdown::Configuration::setext));
+    printf("%s\n", ob->data);
+    */
+    std::string result = Html2Markdown::Convert((const char*)html, strlen(html));
         
     // insert code here...
     printf("%s\n", result.c_str());

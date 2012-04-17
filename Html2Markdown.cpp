@@ -7,7 +7,6 @@
 //
 
 #include "Html2Markdown.h"
-
 #include "StringUtil.h"
 
 #ifdef _WIN32
@@ -24,7 +23,7 @@ struct {
     const char* chr;
     const char* escape2;
 } HtmlEscape[HTML_ESCAPE_LIST_LEN] = {
-    { "&#32;", " ", "&nbsp;" }, { "&#33;", "!", NULL }, { "&#34;", "\"", NULL }, { "&#35;", "#", NULL },
+    { "&#32;", " ", "&nbsp;" }, { "&#33;", "!", NULL }, { "&#34;", "\"", "&quot;" }, { "&#35;", "#", NULL },
     { "&#36;", "$", NULL }, { "&#37;", "%", NULL },{ "&#38;", "&", "&amp;" },{ "&#39;", "'", NULL },
     { "&#40;", "(", NULL }, { "&#41;", ")", NULL }, { "&#42;", "*", NULL }, { "&#43;", "+", NULL },
     { "&#44;", ",", NULL }, { "&#45;", "-", NULL }, { "&#46;", ".", NULL }, { "&#47;", "/", NULL },
@@ -166,27 +165,35 @@ static bool IsSpecialCharacter(char chr) {
     chr == '!' || chr == '_';
 }
 
-static void EscapeSpecialCharacters(std::string& str) {
+static void UnescapeSpecialCharacters(std::string& str) {
     for(size_t i = 0; i < str.size();) {
-        if(IsSpecialCharacter(str[i])) {
-            str.insert(str.begin() + i, '\\');
-            i += 2;
+        if(IsSpecialCharacter(str[i]) &&
+           str[i-1] == '\\') {
+            str.replace(i-1, 2, std::string(1, str[i]));
         }
         ++i;
     }
 }
 
 static void ReplaceHtmlEscapeCharacters(std::string& str) {
-    for(size_t i = 0; i < HTML_ESCAPE_LIST_LEN; ++i) {
-        size_t escape_pos = str.find(HtmlEscape[i].escape);
-        if(escape_pos != std::string::npos) {
-            str.replace(escape_pos, strlen(HtmlEscape[i].escape), HtmlEscape[i].chr);
-        }
-        
-        if(HtmlEscape[i].escape2 != NULL) {
-            escape_pos = str.find(HtmlEscape[i].escape2);
+    if(str.find('&') != std::string::npos) {
+        for(size_t i = 0; i < HTML_ESCAPE_LIST_LEN; ++i) {
+            size_t escape_pos = str.find(HtmlEscape[i].escape);
             if(escape_pos != std::string::npos) {
-                str.replace(escape_pos, strlen(HtmlEscape[i].escape2), HtmlEscape[i].chr);
+                while(escape_pos != std::string::npos) {
+                    str.replace(escape_pos, strlen(HtmlEscape[i].escape), HtmlEscape[i].chr);
+                    escape_pos = str.find(HtmlEscape[i].escape, escape_pos+1);
+                }
+            }
+            
+            if(HtmlEscape[i].escape2 != NULL) {
+                escape_pos = str.find(HtmlEscape[i].escape2);
+                if(escape_pos != std::string::npos) {
+                    while(escape_pos != std::string::npos) {
+                        str.replace(escape_pos, strlen(HtmlEscape[i].escape2), HtmlEscape[i].chr);
+                        escape_pos = str.find(HtmlEscape[i].escape2, escape_pos+1);
+                    }
+                }
             }
         }
     }
@@ -195,7 +202,7 @@ static void ReplaceHtmlEscapeCharacters(std::string& str) {
 inline std::string ProcessHtmlString(const std::string& str) {
     std::string val = str;
     ReplaceHtmlEscapeCharacters(val);
-    EscapeSpecialCharacters(val);
+    UnescapeSpecialCharacters(val);
     return val;
 }
 
@@ -270,9 +277,9 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
                 for(int i = 0; i <= (node->tag - Html::H1); ++i) {
                     result += "#";
                 }
-                result += " " + ProcessHtmlString(node->value) + "\n\n";
+                result += " " + node->value + "\n\n";
             } else {
-                std::string converted_val = ProcessHtmlString(node->value);
+                std::string converted_val = node->value;
                 result += converted_val + "\n";
                 if(node->tag == Html::H1) {
                     result += std::string(converted_val.length(), '=') + "\n\n";
@@ -288,16 +295,24 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
             for(int i = 0; i <= (node->tag - Html::H1); ++i) {
                 result += "#";
             }
-            result += " " + ProcessHtmlString(node->value) + "\n\n";
+            result += " " + node->value + "\n\n";
             break;
             
-        case Html::IMG:
-            result += "![" + node->attributes["alt"] + "]";
-            result += "(" + node->attributes["src"];
-            if(node->attributes.find("title") != node->attributes.end())
-                result += "  " + node->attributes["title"] + " ";
+        case Html::IMG: {
+            HtmlNode::AttributeMap::const_iterator src_it = node->attributes.find("src");
+            HtmlNode::AttributeMap::const_iterator alt_it = node->attributes.find("alt");
+            HtmlNode::AttributeMap::const_iterator title_it = node->attributes.find("title");
+            
+            if(src_it == node->attributes.end()) throw Html2Markdown::Exception("no src attribute found in img tag");
+            if(alt_it == node->attributes.end()) throw Html2Markdown::Exception("no src attribute found in img tag");
+            
+            result += "![" + alt_it->second+ "]";
+            result += "(" + src_it->second;
+            if(title_it != node->attributes.end())
+                result += " \"" + title_it->second + "\"";
             result += ")";
             break;
+        }
             
         case Html::TD:
         case Html::TL:
@@ -308,14 +323,14 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
             
         case Html::P:            
             if(node->childs.size() == 0) {
-                result += ProcessHtmlString(node->value) + "\n\n";
+                result += node->value + "\n\n";
             }
             else {
                 size_t start_pos = 0;
                 for(size_t i = 0; i < node->childs.size(); ++i) {
                     size_t end_pos = node->value.find(node->childs[i]->content);
                     
-                    std::string block = ProcessHtmlString(node->value.substr(start_pos, end_pos-start_pos));
+                    std::string block = node->value.substr(start_pos, end_pos-start_pos);
                     result += block + ConvertHtmlTree(node->childs[i], config);
                     
                     start_pos = end_pos + node->childs[i]->content.size();
@@ -355,7 +370,7 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
                     result += pre + ConvertHtmlTree(node->childs[i], config);
                 }
             } else 
-                result += pre + ProcessHtmlString(node->value) + "\n";
+                result += pre + node->value + "\n";
             break;
         }
             
@@ -383,11 +398,11 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
             break;
             
         case Html::EM:            
-            result += std::string(1, config.emmark) + ProcessHtmlString(node->value) + std::string(1, config.emmark);
+            result += std::string(1, config.emmark) + node->value + std::string(1, config.emmark);
             break;
             
         case Html::STRONG:            
-            result += std::string(2, config.strongmark) + ProcessHtmlString(node->value) + std::string(2, config.strongmark);
+            result += std::string(2, config.strongmark) + node->value + std::string(2, config.strongmark);
             break;
             
         case Html::BLOCKQUOTE:
@@ -402,7 +417,8 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
 }
 
 std::string Html2Markdown::Convert(const char* str, size_t length, const Html2Markdown::Configuration& config) {
-    const char* html = (const char*)str;
+    std::string processed_str = ProcessHtmlString(str);
+    const char* html = processed_str.c_str();
     
     std::vector<HtmlNode*> nodes;
     std::vector<HtmlNode*> tag_stack;
@@ -434,7 +450,7 @@ std::string Html2Markdown::Convert(const char* str, size_t length, const Html2Ma
                     state->start_index          = end_tag_block+1;
                     state->tag_str              = tag_str;
                     state->start_content_index  = i;
-                    
+                   
                     if(tag_stack.size() > 0) {
                         state->parent = tag_stack.back();
                         state->parent->childs.push_back(state);
@@ -468,7 +484,9 @@ std::string Html2Markdown::Convert(const char* str, size_t length, const Html2Ma
                 continue;
                 
             } else {
-                assert(tag_stack.size() > 0);
+                if(tag_stack.size() == 0) {
+                    throw Html2Markdown::Exception(("unmatched tag found, tag " + tag_str).c_str());
+                }
                 
                 size_t end_content_index = i+1;
                 while(html[end_content_index] != '>')
