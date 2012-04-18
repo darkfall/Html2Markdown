@@ -254,7 +254,7 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
             HtmlNode::AttributeMap::const_iterator href_it = node->attributes.find("href");
             
             if(href_it == node->attributes.end()) {
-                throw Html2Markdown::Exception("no href found in a link node");
+                throw Html2Markdown::Exception("no href attribute found in a link tag");
             }
             
             // automic links
@@ -304,7 +304,7 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
             HtmlNode::AttributeMap::const_iterator title_it = node->attributes.find("title");
             
             if(src_it == node->attributes.end()) throw Html2Markdown::Exception("no src attribute found in img tag");
-            if(alt_it == node->attributes.end()) throw Html2Markdown::Exception("no src attribute found in img tag");
+            if(alt_it == node->attributes.end()) throw Html2Markdown::Exception("no alt attribute found in img tag");
             
             result += "![" + alt_it->second+ "]";
             result += "(" + src_it->second;
