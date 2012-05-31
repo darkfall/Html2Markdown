@@ -51,6 +51,7 @@ struct {
 
 struct Html2Markdown::HtmlNode {
     Html::Tag tag;
+    
     std::string tag_str;
     std::string value;
     std::string content;
@@ -79,6 +80,9 @@ Html::Tag Html::StringToHtmlTag(const char* str, size_t length) {
     if(STRCMP_NOCASE(str, "p", length) == 0) {
         return Html::P;
     }
+    if(STRCMP_NOCASE(str, "A", length) == 0) {
+        return Html::A;
+    }
     if(STRCMP_NOCASE(str, "h1", length) == 0) {
         return Html::H1;
     }
@@ -100,15 +104,6 @@ Html::Tag Html::StringToHtmlTag(const char* str, size_t length) {
     if(STRCMP_NOCASE(str, "IMG", length) == 0) {
         return Html::IMG;
     }
-    if(STRCMP_NOCASE(str, "TD", length) == 0) {
-        return Html::TD;
-    }
-    if(STRCMP_NOCASE(str, "TL", length) == 0) {
-        return Html::TL;
-    }
-    if(STRCMP_NOCASE(str, "TR", length) == 0) {
-        return Html::TR;
-    }
     if(STRCMP_NOCASE(str, "OL", length) == 0) {
         return Html::OL;
     }
@@ -118,18 +113,39 @@ Html::Tag Html::StringToHtmlTag(const char* str, size_t length) {
     if(STRCMP_NOCASE(str, "LI", length) == 0) {
         return Html::LI;
     }
-    if(STRCMP_NOCASE(str, "PRE", length) == 0) {
-        return Html::PRE;
+    if(STRCMP_NOCASE(str, "TH", length) == 0) {
+        return Html::TH;
     }
-    if(STRCMP_NOCASE(str, "CODE", length) == 0) {
-        return Html::CODE;
+    if(STRCMP_NOCASE(str, "TD", length) == 0) {
+        return Html::TD;
     }
-    if(STRCMP_NOCASE(str, "A", length) == 0) {
-        return Html::A;
+    if(STRCMP_NOCASE(str, "TR", length) == 0) {
+        return Html::TR;
+    }
+    if(STRCMP_NOCASE(str, "DD", length) == 0) {
+        return Html::DD;
+    }
+    if(STRCMP_NOCASE(str, "DL", length) == 0) {
+        return Html::DL;
+    }
+    if(STRCMP_NOCASE(str, "DT", length) == 0) {
+        return Html::DT;
     }
     if(STRCMP_NOCASE(str, "EM", length) == 0) {
         return Html::EM;
     }
+    
+    if(STRCMP_NOCASE(str, "PRE", length) == 0) {
+        return Html::PRE;
+    }
+    if(STRCMP_NOCASE(str, "SUP", length) == 0) {
+        return Html::SUP;
+    }
+    
+    if(STRCMP_NOCASE(str, "CODE", length) == 0) {
+        return Html::CODE;
+    }
+    
     if(STRCMP_NOCASE(str, "STRONG", length) == 0) {
         return Html::STRONG;
     }
@@ -142,6 +158,21 @@ Html::Tag Html::StringToHtmlTag(const char* str, size_t length) {
     if(STRCMP_NOCASE(str, "BLOCKQUOTE", length) == 0) {
         return Html::BLOCKQUOTE;
     }
+    if(STRCMP_NOCASE(str, "ABBR", length) == 0) {
+        return Html::ABBR;
+    }
+    
+    
+    if(STRCMP_NOCASE(str, "table", length) == 0) {
+        return Html::TABLE;
+    }
+    if(STRCMP_NOCASE(str, "thead", length) == 0) {
+        return Html::THEAD;
+    }
+    if(STRCMP_NOCASE(str, "tbody", length) == 0) {
+        return Html::TBODY;
+    }
+  
     return Html::Unknown;
 }
 
@@ -159,10 +190,10 @@ bool Html::IsSingleTagName(const char* name, size_t length) {
 
 static bool IsSpecialCharacter(char chr) {
     return chr == '*' || chr == '{' || chr == '}' ||
-    chr == '`' || chr == '(' || chr == ')' ||
-    chr == '[' || chr == ']' || chr == '#' ||
-    chr == '+' || chr == '-' || chr == '.' ||
-    chr == '!' || chr == '_';
+            chr == '`' || chr == '(' || chr == ')' ||
+            chr == '[' || chr == ']' || chr == '#' ||
+            chr == '+' || chr == '-' || chr == '.' ||
+            chr == '!' || chr == '_';
 }
 
 static void UnescapeSpecialCharacters(std::string& str) {
@@ -210,7 +241,12 @@ static void PostProcessString(std::string& str) {
     
 }
 
-Html2Markdown::Configuration Html2Markdown::DefaultConfiguration('+', '*', '*', Html2Markdown::Configuration::atx);
+Html2Markdown::Configuration Html2Markdown::DefaultConfiguration('+', 
+                                                                 '*', 
+                                                                 '*', 
+                                                                 Html2Markdown::Configuration::atx,
+                                                                 Html2Markdown::Configuration::Indented,
+                                                                 false);
 
 Html2Markdown::Exception::Exception(const char* exp): mMssg(exp) { }
 const char* Html2Markdown::Exception::what() const { return mMssg; }
@@ -314,13 +350,6 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
             break;
         }
             
-        case Html::TD:
-        case Html::TL:
-        case Html::TR:
-            result += node->content;
-            result += "\n\n";
-            break;
-            
         case Html::P:            
             if(node->childs.size() == 0) {
                 result += node->value + "\n\n";
@@ -375,13 +404,29 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
         }
             
         case Html::PRE:
-            for(size_t i = 0; i < node->childs.size(); ++i) {
-                if(node->childs[i]->tag == Html::CODE) {
-                    ukn::StringTokenlizer tokens(node->childs[i]->value, "\n");
-                    for(size_t i = 0; i < tokens.size(); ++i)
-                        result += "\t" + tokens[i] + "\n";
+            if(config.codeblockstype == Html2Markdown::Configuration::Indented) {
+               
+                for(size_t i = 0; i < node->childs.size(); ++i) {
+                    if(node->childs[i]->tag == Html::CODE) {
+                        ukn::StringTokenlizer tokens(node->childs[i]->value, "\n");
+                        for(size_t i = 0; i < tokens.size(); ++i)
+                            result += "\t" + tokens[i] + "\n";
+                        
+                    }
                 }
+                
+            } else {
+                
+                result += "~~~~";
+                for(size_t i = 0; i < node->childs.size(); ++i) {
+                    if(node->childs[i]->tag == Html::CODE) {
+                        result += node->childs[i]->value;
+                    }
+                }
+                result += "~~~~";
+                
             }
+    
 			result += "\n\n";
             break;
             
@@ -408,9 +453,107 @@ std::string Html2Markdown::ConvertHtmlTree(HtmlNode* node, const Html2Markdown::
         case Html::BLOCKQUOTE:
             result += ConvertBlockQuote(node, config);
             break;
-            
+                  
         default:
             break;
+    }
+    
+    /* markdown extra tags */
+    if(config.enableextra) {
+        switch(node->tag) {
+            case Html::TABLE:
+                for(size_t i = 0; i < node->childs.size(); ++i) {
+                    result += ConvertHtmlTree(node->childs[i], config);
+                }
+                result += "\n\n";
+                break;
+                
+            case Html::THEAD: {
+                std::string head;
+                for(size_t i = 0; i < node->childs.size(); ++i) {
+                    head += ConvertHtmlTree(node->childs[i], config);
+                }
+                result += head;
+                std::string tail = head;
+                std::replace_if(tail.begin(),
+                                tail.end(),
+                                std::bind2nd(std::not_equal_to<char>(), '|'),
+                                '-');
+                
+                // replace back \n
+                tail[tail.size()-1] = '\n';
+                result += tail;
+                break;
+            }
+            case Html::TBODY:
+                for(size_t i = 0; i < node->childs.size(); ++i) {
+                    result += ConvertHtmlTree(node->childs[i], config);
+                }
+                break;
+                
+            case Html::TR:
+                result += "|";
+                for(size_t i = 0; i < node->childs.size(); ++i) {
+                    HtmlNode* childnode = node->childs[i];
+                    if(childnode->tag == Html::TH ||
+                       childnode->tag == Html::TD) {
+                        result += ConvertHtmlTree(node->childs[i], config); 
+                        
+                        result += "|";
+                    }
+                }
+                result += "\n";
+                break;
+                
+            case Html::TH:
+            case Html::TD:
+                if(node->childs.size() == 0)
+                    result += node->value;
+                else {
+                    for(size_t i = 0; i < node->childs.size(); ++i) {
+                        result += ConvertHtmlTree(node->childs[i], config);
+                    }
+                }
+                break;
+                
+            case Html::DL:
+                result += "\n";
+                for(size_t i = 0; i < node->childs.size(); ++i) {
+                    result += ConvertHtmlTree(node->childs[i], config);
+                }
+                result += "\n";
+                break;
+                
+            case Html::DT:
+                result += "\n";
+                result += node->value;
+                result += "\n";
+                for(size_t i = 0; i < node->childs.size(); ++i) {
+                    result += ConvertHtmlTree(node->childs[i], config);
+                }
+                break;
+                
+            case Html::DD:
+                if(node->childs.size() != 0) {
+                    for(size_t i = 0; i < node->childs.size(); ++i) {
+                        if(node->childs[i]->tag == Html::P) {
+                            result += "\n:\t" + node->childs[i]->value + "\n";
+                        }
+                    }
+                } else {
+                    result += ":\t" + node->value + "\n";
+                }
+                break;
+                
+            case Html::SUP:
+                break;
+                
+            case Html::ABBR:
+                break;
+                
+            default:
+                break;
+        }
     }
     
     return result;

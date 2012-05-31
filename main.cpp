@@ -13,7 +13,7 @@
 //#include "src/markdown.h"
 //#include "html/html.h"
 
-static const char* html = "<html><body><h1>hello&nbsp;world</h1><h3>Hello world2</h3><p>hahahhaha test<a href=\"www.google.com\" title=\"Google\">Google!</a>test<ul><li>ll1</li><li>ll2</li></ul></p><ul><li><p>list1</p></li><li>list2</li></ul></body></html>";
+static const char* html = "<html><body><h1>hello&nbsp;world</h1><h3>Hello world2</h3><p>hahahhaha test<a href=\"www.google.com\" title=\"Google\">Google!</a>test<ul><li>ll1</li><li>ll2</li></ul></p><ul><li><p>list1</p></li><li>list2</li></ul><dl><dt>Apple</dt><dd>Pomaceous fruit of plants of the genus Malus in the family Rosaceae.</dd><dt>Orange</dt><dd>The fruit of an evergreen tree of the genus Citrus.</dd></dl><table><thead><tr><th>First Header</th><th>Second Header</th></tr></thead><tbody><tr><td>Content Cell</td><td>Content Cell</td></tr><tr><td>Content Cell</td><td>Content Cell</td></tr></tbody></table></body></html>";
 
 int main (int argc, const char * argv[])
 {
@@ -37,9 +37,12 @@ int main (int argc, const char * argv[])
     
     printf("%s\n", ob->data);
     */
-    std::string result = Html2Markdown::Convert((const char*)html, strlen(html));
+    std::string result = Html2Markdown::Convert((const char*)html, 
+                                                strlen(html),
+                                                Html2Markdown::Configuration()
+                                                    .setEnableExtra(true)
+                                                    .setCodeblockStyle(Html2Markdown::Configuration::Fenced));
         
-    // insert code here...
     printf("%s\n", result.c_str());
 
     return 0;

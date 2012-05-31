@@ -26,11 +26,7 @@ struct Html {
         H5,
         H6,
         
-        IMG  = 10,
-        
-        TD = 20,
-        TL,
-        TR,
+        IMG,
         
         P,
         
@@ -50,6 +46,25 @@ struct Html {
         HTML,
         BODY,
         BLOCKQUOTE,
+        
+        /* markdown extra tags */
+        /* table */
+        TABLE,
+        THEAD,
+        TBODY,
+        TR,
+        TH,
+        TD,
+        
+        /* definition lists */
+        DD,
+        DL,
+        DT,
+        
+        /* footnote */
+        SUP,
+        /* abbreviation */
+        ABBR,
     };
     
     /* utilities */
@@ -60,19 +75,49 @@ struct Html {
 class Html2Markdown {
 public:    
     struct Configuration {
-        enum HeaderStyle { setext, atx };
+        enum HeaderStyle { 
+            setext, 
+            atx
+        };
+        
+        enum CodeblockStyle {
+            Indented, /* original markdown syntax */
+            Fenced, /* introduced in markdown extra */
+        };
         
         char listmark;
         char emmark;
         char strongmark;
         int  headerstyle;
+        int  codeblockstype;
+        /* enable markdown extra or not */
+        bool enableextra;
         
-        Configuration(char lm, char em, char sm, int hs):
+        
+        Configuration& setListMark(char lm) { this->listmark = lm; return *this; }
+        Configuration& setEmMark(char em) { this->emmark = em; return *this; }
+        Configuration& setStrongMark(char sm) { this->strongmark = sm; return *this; }
+        Configuration& setHeaderStyle(Html2Markdown::Configuration::HeaderStyle hs) { this->headerstyle = hs; return *this; }
+        Configuration& setCodeblockStyle(Html2Markdown::Configuration::CodeblockStyle cs) { this->codeblockstype = cs; return *this; }
+        Configuration& setEnableExtra(bool flag) { this->enableextra = flag; return *this; }
+        
+        
+        Configuration(char lm, char em, char sm, int hs, int cb, bool extra = false):
         listmark(lm),
         emmark(em),
         strongmark(sm),
-        headerstyle(hs) { }
-    };
+        headerstyle(hs),
+        codeblockstype(cb),
+        enableextra(extra) { }
+        
+        Configuration():
+        listmark('+'),
+        emmark('*'),
+        strongmark('*'),
+        headerstyle(Html2Markdown::Configuration::atx),
+        codeblockstype(Html2Markdown::Configuration::Indented),
+        enableextra(false) { }
+    }; 
         
     class Exception {
     public:
