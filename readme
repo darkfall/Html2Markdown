@@ -1,4 +1,4 @@
-A simple library that converts 'markdownified' html document back to markdown syntax
+A simple library that converts 'markdownified' html document back to markdown(markdown extra) syntax
 
 * Usage: 
 	std::string markdown = Html2Markdown::Convert(DOC, LENGTH[, Configuration])
