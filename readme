@@ -2,6 +2,13 @@ A simple library that converts 'markdownified' html document back to markdown sy
 
 * Usage: 
 	std::string markdown = Html2Markdown::Convert(DOC, LENGTH[, Configuration])
+	
+	for example: 
+	std::string result = Html2Markdown::Convert((const char*)html, 
+                                               	    strlen(html),
+                                                    Html2Markdown::Configuration()
+                                                       .setEnableExtra(true)
+                                                       .setCodeblockStyle(Html2Markdown::Configuration::Fenced));
 
 * Notice:
 	The result may not exactly the same as the original document as the converter only emits part of the markdown syntax. 
