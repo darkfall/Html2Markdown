@@ -25,7 +25,7 @@ A simple library that converts 'markdownified' html document back to markdown(ma
 
 * Limitations:
 	Only html tags that specified in the markdown documentation will be converted
-	Only part of html escape characters will not be converted
+	Only part of html escape characters will be converted
 
 * Known Issues:
 
